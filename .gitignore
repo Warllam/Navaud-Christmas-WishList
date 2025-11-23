@@ -1,0 +1,8 @@
+# Monorepo ignores
+node_modules
+.pnpm-debug.log*
+.turbo
+apps/web/.next
+apps/web/.env.local
+firebase-debug.log
+.firebase

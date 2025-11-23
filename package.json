@@ -1,0 +1,10 @@
+{
+  "name": "navauds-noel-wishlists",
+  "private": true,
+  "packageManager": "pnpm@10.2.1",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm --filter web lint"
+  }
+}
