@@ -3,12 +3,12 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/components/session-context";
-import { FAMILY_NAMES } from "@/lib/allowed-names";
+import { FAMILY_NAMES, FamilyName } from "@/lib/allowed-names";
 
 export default function Home() {
   const { user, loading, login } = useSession();
   const router = useRouter();
-  const [selectedName, setSelectedName] = useState(FAMILY_NAMES[0]);
+  const [selectedName, setSelectedName] = useState<FamilyName>(FAMILY_NAMES[0]);
   const [pin, setPin] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
@@ -67,7 +67,7 @@ export default function Home() {
             Prenom
             <select
               value={selectedName}
-              onChange={(e) => setSelectedName(e.target.value)}
+              onChange={(e) => setSelectedName(e.target.value as FamilyName)}
               className="mt-2 w-full rounded-xl border border-slate-500/40 bg-slate-800 px-3 py-3 text-sm text-white focus:border-white focus:outline-none"
             >
               {FAMILY_NAMES.map((name) => (

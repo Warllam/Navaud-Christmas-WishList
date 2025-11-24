@@ -307,6 +307,10 @@ export default function DashboardPage() {
                       setFeedback("Ajoutez un pin.");
                       return;
                     }
+                    if (!user) {
+                      setFeedback("Reconnexion requise pour modifier le pin.");
+                      return;
+                    }
                     try {
                       await changePin(user.id, newPin.trim());
                       setFeedback(

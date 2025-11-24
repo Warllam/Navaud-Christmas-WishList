@@ -132,7 +132,7 @@ export default function WishlistPublicPage({ params }: Props) {
         ) : (
           items.map((item) => {
             const reservedByViewer = item.reservedBy === user?.id;
-            const reservedByOther = item.reservedBy && !reservedByViewer;
+            const reservedByOther = Boolean(item.reservedBy) && !reservedByViewer;
             const removedByOwner = Boolean(item.removedByOwner);
             if (removedByOwner && !reservedByViewer) {
               return null;

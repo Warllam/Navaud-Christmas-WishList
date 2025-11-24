@@ -16,7 +16,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { UserProfile, WishlistItem } from "./types";
-import { FAMILY_NAMES } from "./allowed-names";
+import { FAMILY_NAMES, type FamilyName } from "./allowed-names";
 
 const USERS_COLLECTION = "users";
 const ITEMS_COLLECTION = "wishlistItems";
@@ -46,7 +46,7 @@ const toWishlistItem = (id: string, data: Record<string, unknown>): WishlistItem
 });
 
 export const createOrVerifyUserWithPin = async (
-  displayName: string,
+  displayName: FamilyName,
   pin: string
 ): Promise<UserProfile> => {
   if (!FAMILY_NAMES.includes(displayName)) {

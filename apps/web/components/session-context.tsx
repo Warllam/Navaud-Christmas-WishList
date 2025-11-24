@@ -6,17 +6,18 @@ import {
   createOrVerifyUserWithPin,
   fetchUserProfile,
 } from "@/lib/firestore";
+import { FAMILY_NAMES, type FamilyName } from "@/lib/allowed-names";
 import type { UserProfile } from "@/lib/types";
 
 type SessionUser = {
   id: string;
-  displayName: string;
+  displayName: FamilyName;
 };
 
 type SessionContextValue = {
   user: SessionUser | null;
   loading: boolean;
-  login: (displayName: string, pin: string) => Promise<void>;
+  login: (displayName: FamilyName, pin: string) => Promise<void>;
   logout: () => void;
   profile: UserProfile | null;
   updatePin: (newPin: string) => Promise<void>;
@@ -54,11 +55,16 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
     void loadProfile();
   }, [user]);
 
-  const login = async (displayName: string, pin: string) => {
+  const login = async (displayName: FamilyName, pin: string) => {
     const profileDoc = await createOrVerifyUserWithPin(displayName, pin);
+    const profileName = FAMILY_NAMES.includes(
+      profileDoc.displayName as FamilyName
+    )
+      ? (profileDoc.displayName as FamilyName)
+      : displayName;
     const sessionUser: SessionUser = {
       id: profileDoc.id,
-      displayName: profileDoc.displayName ?? displayName,
+      displayName: profileName,
     };
     setUser(sessionUser);
     if (typeof window !== "undefined") {
