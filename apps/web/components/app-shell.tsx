@@ -9,6 +9,7 @@ import { useSession } from "./session-context";
 const navLinks = [
   { href: "/tableau-de-bord", label: "Ma liste" },
   { href: "/utilisateurs", label: "Listes famille" },
+  { href: "/mes-cadeaux", label: "Mes cadeaux" },
 ];
 
 const NavLink = ({
@@ -127,7 +128,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
         </nav>
       )}
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 pb-24 md:pb-12 md:pt-12">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-4 pb-24 md:pb-12 md:pt-6">
         {children}
       </main>
       <footer className="border-t border-red-100/80 bg-white/70 backdrop-blur">

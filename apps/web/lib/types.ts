@@ -18,5 +18,8 @@ export type WishlistItem = {
   position?: number | null;
   removedByOwner?: boolean;
   reservedBy?: string | null;
+  reservedWith?: string | null;
   createdAt?: Timestamp | null;
+  hiddenFromOwner?: boolean;
+  suggestedBy?: string | null;
 };

@@ -42,6 +42,9 @@ const toWishlistItem = (id: string, data: Record<string, unknown>): WishlistItem
       : Number(data.position),
   removedByOwner: Boolean(data.removedByOwner),
   reservedBy: (data.reservedBy as string | null | undefined) ?? null,
+  reservedWith: (data.reservedWith as string | null | undefined) ?? null,
+  hiddenFromOwner: Boolean(data.hiddenFromOwner),
+  suggestedBy: (data.suggestedBy as string | null | undefined) ?? null,
   createdAt: (data.createdAt as Timestamp) ?? null,
 });
 
@@ -131,7 +134,10 @@ export const listenToWishlistItems = (
   );
 };
 
-type ItemPayload = Pick<WishlistItem, "title" | "description" | "link" | "imageUrl" | "position">;
+type ItemPayload = Pick<
+  WishlistItem,
+  "title" | "description" | "link" | "imageUrl" | "position" | "hiddenFromOwner" | "suggestedBy"
+>;
 
 const normalizeOptionalString = (value?: string | null) => {
   if (value === undefined) return undefined;
@@ -156,6 +162,8 @@ export const createWishlistItem = async (userId: string, payload: ItemPayload) =
     createdAt: serverTimestamp(),
     position,
     removedByOwner: false,
+    hiddenFromOwner: Boolean(payload.hiddenFromOwner),
+    suggestedBy: payload.suggestedBy ?? null,
   };
 
   if (description !== undefined) {
@@ -216,7 +224,12 @@ export const deleteWishlistItem = async (itemId: string) => {
   });
 };
 
-export const setReservation = async (itemId: string, userId: string, reserve: boolean) => {
+export const setReservation = async (
+  itemId: string,
+  userId: string,
+  reserve: boolean,
+  partnerId?: string | null
+) => {
   const ref = doc(db, ITEMS_COLLECTION, itemId);
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(ref);
@@ -228,7 +241,11 @@ export const setReservation = async (itemId: string, userId: string, reserve: bo
       if (data.reservedBy && data.reservedBy !== userId) {
         throw new Error("Deja reserve par quelqu'un d'autre.");
       }
-      transaction.update(ref, { reservedBy: userId, removedByOwner: false });
+      transaction.update(ref, {
+        reservedBy: userId,
+        reservedWith: partnerId ?? null,
+        removedByOwner: false,
+      });
     } else {
       if (data.reservedBy && data.reservedBy !== userId) {
         throw new Error("Vous ne pouvez pas liberer ce cadeau.");
@@ -236,7 +253,7 @@ export const setReservation = async (itemId: string, userId: string, reserve: bo
       if (data.removedByOwner) {
         transaction.delete(ref);
       } else {
-        transaction.update(ref, { reservedBy: null });
+        transaction.update(ref, { reservedBy: null, reservedWith: null });
       }
     }
   });
@@ -252,4 +269,32 @@ export const updateWishlistPositions = async (
     batch.update(ref, { position });
   });
   await batch.commit();
+};
+
+export const listenToUserReservations = (
+  userId: string,
+  onData: (items: WishlistItem[]) => void
+): Unsubscribe => {
+  const q = query(collection(db, ITEMS_COLLECTION), where("reservedBy", "==", userId));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = snapshot.docs
+        .map((docSnap) =>
+          toWishlistItem(docSnap.id, docSnap.data() as Record<string, unknown>)
+        )
+        .sort((a, b) => {
+          const aTime =
+            a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : 0;
+          const bTime =
+            b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : 0;
+          return bTime - aTime;
+        });
+      onData(items);
+    },
+    (error) => {
+      console.error("Reservations listener error", error);
+      onData([]);
+    }
+  );
 };

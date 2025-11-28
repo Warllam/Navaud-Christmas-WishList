@@ -57,7 +57,10 @@ export default function DashboardPage() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [orderBootstrapped, setOrderBootstrapped] = useState(false);
   const activeItems = useMemo(
-    () => items.filter((item) => !item.removedByOwner),
+    () =>
+      items.filter(
+        (item) => !item.removedByOwner && !item.hiddenFromOwner
+      ),
     [items]
   );
 
@@ -227,122 +230,119 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 pb-12">
-      <div className="rounded-3xl bg-white/95 p-6 shadow-xl ring-1 ring-green-100">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex-1 space-y-2">
-            <p className="text-sm font-medium text-green-700">
-              Bonjour {profile.displayName}
-            </p>
-            <h1 className="text-3xl font-semibold text-slate-900">
-              Votre liste d envies
-            </h1>
-            <p className="text-sm text-slate-600">
-              Ajoutez vos idees, organisez-les par glisser/deposer et partagez
-              le lien public si besoin.
-            </p>
-          </div>
-        </div>
+      <header className="-mx-4 -mt-4 bg-white px-4 pt-4 pb-5 md:-mx-8 md:-mt-6 md:px-8 border-b border-slate-200 shadow-[0_6px_30px_-28px_rgba(0,0,0,0.4)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-green-700">
+          Ma liste
+        </p>
+        <h1 className="mt-1 text-3xl font-semibold text-slate-900">
+          Bonjour {profile.displayName}
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Ajoutez vos idees, organisez-les par glisser/deposer et partagez
+          le lien public si besoin.
+        </p>
+        <div className="mt-3 h-px w-full bg-gradient-to-r from-transparent via-green-200 to-transparent" />
+      </header>
 
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-slate-900">
-              Options pratiques (lien public, pin)
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowExtras((value) => !value)}
-              className="text-xs font-semibold text-red-600 underline"
-            >
-              {showExtras ? "Masquer" : "Afficher"}
-            </button>
-          </div>
-          {showExtras && (
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
-                <p className="text-sm font-semibold text-slate-900">
-                  Lien public
-                </p>
-                <p className="mt-1 text-xs text-slate-600">
-                  A partager uniquement si besoin. Les reservations restent
-                  anonymes.
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <code className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-800">
-                    {shareLink || "Lien de partage"}
-                  </code>
-                  <button
-                    type="button"
-                    className="rounded-full bg-red-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-                    onClick={async () => {
-                      if (!shareLink) return;
-                      try {
-                        await navigator.clipboard.writeText(shareLink);
-                        setFeedback("Lien copie dans le presse-papiers.");
-                      } catch (error) {
-                        console.error(error);
-                        setFeedback(
-                          "Copie impossible, copiez le lien manuellement."
-                        );
-                      }
-                    }}
-                  >
-                    Copier le lien
-                  </button>
-                </div>
-              </div>
-              <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
-                <p className="text-sm font-semibold text-slate-900">
-                  Mettre a jour le pin
-                </p>
-                <p className="mt-1 text-xs text-slate-600">
-                  Pin stocke en clair pour la famille. Changez-le si necessaire.
-                </p>
-                <form
-                  className="mt-3 flex flex-col gap-3"
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    const data = new FormData(e.currentTarget);
-                    const newPin = (data.get("newPin") as string) ?? "";
-                    if (!newPin.trim()) {
-                      setFeedback("Ajoutez un pin.");
-                      return;
-                    }
-                    if (!user) {
-                      setFeedback("Reconnexion requise pour modifier le pin.");
-                      return;
-                    }
+      <section className="rounded-3xl bg-white/98 p-6 shadow-lg ring-1 ring-slate-100">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-slate-900">
+            Options pratiques (lien public, pin)
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowExtras((value) => !value)}
+            className="text-xs font-semibold text-red-600 underline"
+          >
+            {showExtras ? "Masquer" : "Afficher"}
+          </button>
+        </div>
+        {showExtras && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+              <p className="text-sm font-semibold text-slate-900">
+                Lien public
+              </p>
+              <p className="mt-1 text-xs text-slate-600">
+                A partager uniquement si besoin. Les reservations restent
+                anonymes.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <code className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-800">
+                  {shareLink || "Lien de partage"}
+                </code>
+                <button
+                  type="button"
+                  className="rounded-full bg-red-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+                  onClick={async () => {
+                    if (!shareLink) return;
                     try {
-                      await changePin(user.id, newPin.trim());
-                      setFeedback(
-                        "Pin mis a jour (visible en clair dans la base)."
-                      );
-                      e.currentTarget.reset();
+                      await navigator.clipboard.writeText(shareLink);
+                      setFeedback("Lien copie dans le presse-papiers.");
                     } catch (error) {
                       console.error(error);
-                      setFeedback("Impossible de mettre a jour le pin.");
+                      setFeedback(
+                        "Copie impossible, copiez le lien manuellement."
+                      );
                     }
                   }}
                 >
-                  <input
-                    name="newPin"
-                    type="text"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-red-400 focus:outline-none"
-                    placeholder="Nouveau pin"
-                  />
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow"
-                  >
-                    Sauvegarder le pin
-                  </button>
-                </form>
+                  Copier le lien
+                </button>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+            <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+              <p className="text-sm font-semibold text-slate-900">
+                Mettre a jour le pin
+              </p>
+              <p className="mt-1 text-xs text-slate-600">
+                Pin stocke en clair pour la famille. Changez-le si necessaire.
+              </p>
+              <form
+                className="mt-3 flex flex-col gap-3"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const data = new FormData(e.currentTarget);
+                  const newPin = (data.get("newPin") as string) ?? "";
+                  if (!newPin.trim()) {
+                    setFeedback("Ajoutez un pin.");
+                    return;
+                  }
+                  if (!user) {
+                    setFeedback("Reconnexion requise pour modifier le pin.");
+                    return;
+                  }
+                  try {
+                    await changePin(user.id, newPin.trim());
+                    setFeedback(
+                      "Pin mis a jour (visible en clair dans la base)."
+                    );
+                    e.currentTarget.reset();
+                  } catch (error) {
+                    console.error(error);
+                    setFeedback("Impossible de mettre a jour le pin.");
+                  }
+                }}
+              >
+                <input
+                  name="newPin"
+                  type="text"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-red-400 focus:outline-none"
+                  placeholder="Nouveau pin"
+                />
+                <button
+                  type="submit"
+                  className="w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow"
+                >
+                  Sauvegarder le pin
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </section>
 
-      <div className="space-y-4">
+      <section className="rounded-3xl bg-white/98 p-6 shadow-lg ring-1 ring-slate-100 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-slate-900">Vos cadeaux</p>
@@ -377,7 +377,7 @@ export default function DashboardPage() {
               <div className="absolute left-3 top-3 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
                 #{index + 1}
               </div>
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 pl-10 pt-1">
                 <div className="flex flex-col gap-1">
                   <h3 className="text-lg font-semibold text-slate-900">
                     {item.title}
@@ -422,7 +422,7 @@ export default function DashboardPage() {
             </div>
           ))
         )}
-      </div>
+      </section>
 
       {feedback && (
         <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 text-sm text-slate-700 shadow">
