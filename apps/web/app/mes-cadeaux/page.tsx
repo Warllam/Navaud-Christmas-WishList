@@ -12,7 +12,11 @@ export default function MyGiftsPage() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = listenToUserReservations(user.id, setItems);
+    const unsubscribe = listenToUserReservations(
+      user.id,
+      user.displayName ?? null,
+      setItems
+    );
     return unsubscribe;
   }, [user]);
 

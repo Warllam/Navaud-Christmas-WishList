@@ -273,28 +273,66 @@ export const updateWishlistPositions = async (
 
 export const listenToUserReservations = (
   userId: string,
+  displayName: string | null,
   onData: (items: WishlistItem[]) => void
 ): Unsubscribe => {
-  const q = query(collection(db, ITEMS_COLLECTION), where("reservedBy", "==", userId));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const items = snapshot.docs
-        .map((docSnap) =>
+  const mainQuery = query(collection(db, ITEMS_COLLECTION), where("reservedBy", "==", userId));
+  const listeners: Unsubscribe[] = [];
+
+  const collectAndEmit = (snapshots: Record<string, WishlistItem[]>) => {
+    const merged = new Map<string, WishlistItem>();
+    Object.values(snapshots).forEach((list) => {
+      list.forEach((item) => merged.set(item.id, item));
+    });
+    const sorted = Array.from(merged.values()).sort((a, b) => {
+      const aTime = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : 0;
+      const bTime = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : 0;
+      return bTime - aTime;
+    });
+    onData(sorted);
+  };
+
+  const snapshots: Record<string, WishlistItem[]> = {};
+
+  listeners.push(
+    onSnapshot(
+      mainQuery,
+      (snapshot) => {
+        snapshots.main = snapshot.docs.map((docSnap) =>
           toWishlistItem(docSnap.id, docSnap.data() as Record<string, unknown>)
-        )
-        .sort((a, b) => {
-          const aTime =
-            a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : 0;
-          const bTime =
-            b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : 0;
-          return bTime - aTime;
-        });
-      onData(items);
-    },
-    (error) => {
-      console.error("Reservations listener error", error);
-      onData([]);
-    }
+        );
+        collectAndEmit(snapshots);
+      },
+      (error) => {
+        console.error("Reservations listener error", error);
+        snapshots.main = [];
+        collectAndEmit(snapshots);
+      }
+    )
   );
+
+  if (displayName) {
+    const partnerQuery = query(
+      collection(db, ITEMS_COLLECTION),
+      where("reservedWith", "==", displayName)
+    );
+    listeners.push(
+      onSnapshot(
+        partnerQuery,
+        (snapshot) => {
+          snapshots.partner = snapshot.docs.map((docSnap) =>
+            toWishlistItem(docSnap.id, docSnap.data() as Record<string, unknown>)
+          );
+          collectAndEmit(snapshots);
+        },
+        (error) => {
+          console.error("Reservations partner listener error", error);
+          snapshots.partner = [];
+          collectAndEmit(snapshots);
+        }
+      )
+    );
+  }
+
+  return () => listeners.forEach((unsub) => unsub());
 };
